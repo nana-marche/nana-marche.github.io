@@ -17,12 +17,15 @@
       --muted: rgba(255,255,255,.70);
       --shadow: 0 30px 90px rgba(0,0,0,.55);
 
-      /* アイコン周り */
-      --grid-gap: 16px;
+      /* ===== アイコン周り（ここ触るだけで美しく整う） ===== */
+      --grid-gap: 18px;        /* ← アイコン間隔（美しく見せる要） */
       --icon-radius: 16px;
-      --icon-pad: 10px;
+      --icon-pad: 8px;         /* ← 枠の中の余白（小さめに） */
       --label-font: 11px;
-      --svg-size: 28px;
+      --svg-size: 24px;        /* ← 中身の画像サイズ（小さめに） */
+
+      /* ドックも同じ感覚で揃える */
+      --dock-gap: 14px;        /* ← ドックのアイコン間隔 */
 
       /* ページドット */
       --dot-size: 18px;
@@ -62,9 +65,7 @@
     .shell{
       width: min(var(--shell-w), 100%);
       border-radius: var(--radius);
-      overflow:hidden;
       position:relative;
-      border: 1px solid rgba(255,255,255,.18);
       box-shadow: var(--shadow);
 
       background:
@@ -116,20 +117,17 @@
       display:flex;
       flex-direction:column;
       touch-action: pan-y;
-
-      /* PCドラッグ時のテキスト選択を抑制 */
       user-select: none;
     }
 
     /* iOS対策：アイコン上でもスワイプ判定を通す */
     .home,
     .home *{
-        touch-action: pan-y;          /* 縦は許可、横はJSで制御 */
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-touch-callout: none;
+      touch-action: pan-y;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
-
 
     .pager{ margin-top: 6px; }
 
@@ -137,12 +135,13 @@
       display:flex;
       gap: 18px;
       overflow-x:auto;
+      overflow-y: hidden;
       scroll-snap-type: x mandatory;
       scroll-behavior:smooth;
       scrollbar-width:none;
-      padding: 4px 4px 0;
+      padding: 0;
 
-      touch-action: pan-y; /* 縦は許す */
+      touch-action: pan-y;
       user-select:none;
       cursor: grab;
     }
@@ -162,9 +161,7 @@
       margin-top: 2px;
     }
 
-    .app, .icon{
-        touch-action: pan-y;
-    }
+    .app, .icon{ touch-action: pan-y; }
 
     .app{
       appearance:none;
@@ -186,7 +183,6 @@
 
       background: rgba(255,255,255,.10);
       border: 1px solid rgba(255,255,255,.14);
-      box-shadow: 0 14px 34px rgba(0,0,0,.30);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -200,8 +196,10 @@
       background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 62%);
       transform: rotate(15deg);
       opacity:.95;
+      pointer-events:none;
     }
 
+    /* ここにPNG/SVGを差し込む（imgでもinline svgでもOK） */
     .svgicon{
       position:relative;
       width: var(--svg-size);
@@ -210,6 +208,12 @@
       filter: drop-shadow(0 10px 14px rgba(0,0,0,.35));
     }
     .svgicon svg{ width:100%; height:100%; display:block; }
+    .svgicon img{
+      width:100%;
+      height:100%;
+      display:block;
+      object-fit: contain;
+    }
 
     .label{
       margin-top: 7px;
@@ -272,7 +276,7 @@
     }
     .pdot.is-active svg{ opacity: 1; }
 
-    /* ドック（メインと同サイズ同見た目） */
+    /* ドック（メインと同じサイズ・同じ.iconを使う＝サイズ一致） */
     .dock{
       padding: 12px;
       border-radius: 22px;
@@ -282,7 +286,7 @@
       box-shadow: 0 18px 50px rgba(0,0,0,.30);
       display:grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      gap: var(--dock-gap);
     }
 
     /* ===== モダール ===== */
@@ -334,8 +338,11 @@
       display:grid;
       place-items:center;
       flex: 0 0 auto;
+      overflow:hidden;
     }
     .modal__badge svg{ width: 18px; height: 18px; display:block; }
+    .modal__badge img{ width: 18px; height: 18px; display:block; object-fit:contain; }
+
     .modal__title h2{
       margin:0;
       font-size: 14px;
@@ -381,58 +388,68 @@
     .card p{ margin:0; font-size: 13px; line-height: 1.7; color: rgba(255,255,255,.84); }
     .list{ margin: 10px 0 0; padding-left: 18px; color: rgba(255,255,255,.82); line-height: 1.8; font-size: 13px; }
 
-    /* ★スマホ：フル画面 */
-/* ★スマホ：フル画面（縦横100%固定 / ページはスクロールさせない） */
-@media (max-width: 540px){
-  html, body{
-    height: 100%;
-    overflow: hidden;          /* ★ページ側の縦スクロール禁止 */
-  }
+    /* ★スマホ：フル画面（縦横100%固定 / ページはスクロールさせない） */
+    @media (max-width: 540px){
+      html, body{
+        height: 100%;
+        overflow: hidden;
+      }
 
-  body{
-    padding: 0;
-    background: #080a10;
-    align-items: stretch;
-    overscroll-behavior: none; /* ★バウンス抑制（対応ブラウザ） */
-    position: fixed;           /* ★iOS含め「ページが動く」を止める */
-    inset: 0;
-    width: 100%;
-  }
+      body{
+        padding: 0;
+        background: #080a10;
+        align-items: stretch;
+        overscroll-behavior: none;
+        position: fixed;
+        inset: 0;
+        width: 100%;
+      }
 
-  .shell{
-    width: 100%;
-    height: calc(var(--vh, 1vh) * 100);  /* ★JSで実寸vhに補正 */
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-  }
+      .shell{
+        width: 100%;
+        height: calc(var(--vh, 1vh) * 100);
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
 
-  .home{
-    height: calc(calc(var(--vh, 1vh) * 100) - 48px); /* statusbar分を引く */
-    min-height: 0;
-    overflow: hidden;   /* ★ホーム自体も縦スクロールさせない */
-  }
+      .home{
+        height: calc(calc(var(--vh, 1vh) * 100) - 48px);
+        min-height: 0;
+        overflow: hidden;
+      }
 
-  .pager{
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-  }
+      .pager{
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
 
-  .pages{
-    height: 100%;
-    overflow-y: hidden; /* ★横だけ */
-    cursor: auto;
-  }
+      .pages{
+        height: 100%;
+        overflow-y: hidden;
+        cursor: auto;
+      }
 
-  .page{
-    height: 100%;
-  }
-}
+      .page{ height: 100%; }
+    }
 
     @media (prefers-reduced-motion: reduce){
       .pages{ scroll-behavior:auto; }
       .pdot{ transform:none !important; }
+    }
+
+    /* ★閉じる時：中身を先に消す（ボタンが残って見えるのを防止） */
+    .modal.is-closing .modal__top,
+    .modal.is-closing .modal__body{
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 120ms linear, transform 120ms ease;
+    }
+    .modal .modal__top,
+    .modal .modal__body{
+      opacity: 1;
+      transform: none;
     }
   </style>
 </head>
@@ -449,45 +466,46 @@
     <section class="home">
       <div class="pager">
         <div class="pages" id="pages" aria-label="ページ">
+
           <!-- Page 1 -->
           <div class="page">
             <div class="grid">
               <button class="app" data-app="about"><div class="icon"><span class="svgicon" data-icon="about"></span></div><div class="label">About</div></button>
               <button class="app" data-app="service"><div class="icon"><span class="svgicon" data-icon="service"></span></div><div class="label">Service</div></button>
               <button class="app" data-app="works"><div class="icon"><span class="svgicon" data-icon="works"></span></div><div class="label">Works</div></button>
-              <button class="app" data-app="news"><div class="icon"><span class="svgicon" data-icon="news"></span></div><div class="label">News</div></button>
-
-              <button class="app" data-app="price"><div class="icon"><span class="svgicon" data-icon="price"></span></div><div class="label">Pricing</div></button>
-              <button class="app" data-app="faq"><div class="icon"><span class="svgicon" data-icon="faq"></span></div><div class="label">FAQ</div></button>
-              <button class="app" data-app="contact"><div class="icon"><span class="svgicon" data-icon="contact"></span></div><div class="label">Contact</div></button>
-              <button class="app" data-app="access"><div class="icon"><span class="svgicon" data-icon="access"></span></div><div class="label">Access</div></button>
             </div>
           </div>
 
           <!-- Page 2 -->
           <div class="page">
             <div class="grid">
+              <button class="app" data-app="news"><div class="icon"><span class="svgicon" data-icon="news"></span></div><div class="label">News</div></button>
+              <button class="app" data-app="price"><div class="icon"><span class="svgicon" data-icon="price"></span></div><div class="label">Pricing</div></button>
+              <button class="app" data-app="faq"><div class="icon"><span class="svgicon" data-icon="faq"></span></div><div class="label">FAQ</div></button>
+              <button class="app" data-app="contact"><div class="icon"><span class="svgicon" data-icon="contact"></span></div><div class="label">Contact</div></button>
+
+              <button class="app" data-app="access"><div class="icon"><span class="svgicon" data-icon="access"></span></div><div class="label">Access</div></button>
               <button class="app" data-app="blog"><div class="icon"><span class="svgicon" data-icon="blog"></span></div><div class="label">Blog</div></button>
               <button class="app" data-app="team"><div class="icon"><span class="svgicon" data-icon="team"></span></div><div class="label">Team</div></button>
               <button class="app" data-app="recruit"><div class="icon"><span class="svgicon" data-icon="recruit"></span></div><div class="label">Recruit</div></button>
+
               <button class="app" data-app="legal"><div class="icon"><span class="svgicon" data-icon="legal"></span></div><div class="label">Legal</div></button>
-                
               <button class="app" data-app="feature"><div class="icon"><span class="svgicon" data-icon="feature"></span></div><div class="label">Feature</div></button>
               <button class="app" data-app="campaign"><div class="icon"><span class="svgicon" data-icon="campaign"></span></div><div class="label">Campaign</div></button>
               <button class="app" data-app="plan"><div class="icon"><span class="svgicon" data-icon="plan"></span></div><div class="label">Plan</div></button>
+
               <button class="app" data-app="review"><div class="icon"><span class="svgicon" data-icon="review"></span></div><div class="label">Review</div></button>
-
-              <button class="app" data-app="tips"><div class="icon"><span class="svgicon" data-icon="tips"></span></div><div class="label">Tips</div></button>
-              <button class="app" data-app="guide"><div class="icon"><span class="svgicon" data-icon="guide"></span></div><div class="label">Guide</div></button>
-              <button class="app" data-app="docs"><div class="icon"><span class="svgicon" data-icon="docs"></span></div><div class="label">Docs</div></button>
-              <button class="app" data-app="support"><div class="icon"><span class="svgicon" data-icon="support"></span></div><div class="label">Support</div></button>
-
             </div>
           </div>
 
           <!-- Page 3 -->
           <div class="page">
             <div class="grid">
+              <button class="app" data-app="tips"><div class="icon"><span class="svgicon" data-icon="tips"></span></div><div class="label">Tips</div></button>
+              <button class="app" data-app="guide"><div class="icon"><span class="svgicon" data-icon="guide"></span></div><div class="label">Guide</div></button>
+              <button class="app" data-app="docs"><div class="icon"><span class="svgicon" data-icon="docs"></span></div><div class="label">Docs</div></button>
+              <button class="app" data-app="support"><div class="icon"><span class="svgicon" data-icon="support"></span></div><div class="label">Support</div></button>
+
               <button class="app" data-app="bonus"><div class="icon"><span class="svgicon" data-icon="bonus"></span></div><div class="label">Bonus</div></button>
               <button class="app" data-app="stats"><div class="icon"><span class="svgicon" data-icon="stats"></span></div><div class="label">Stats</div></button>
               <button class="app" data-app="lead"><div class="icon"><span class="svgicon" data-icon="lead"></span></div><div class="label">Lead</div></button>
@@ -495,8 +513,6 @@
             </div>
           </div>
 
-
-          <!-- ★ページ増やすなら、ここに <div class="page"> ... </div> を追加するだけ -->
         </div>
       </div>
 
@@ -532,67 +548,88 @@
   <script>
     /* =========================
        Wallpaper
-A
     ========================= */
     function setWallpaper(url){
       document.documentElement.style.setProperty("--wallpaper", url ? `url("${url}")` : 'url("")');
     }
     setWallpaper("wallpaper.jpg");
 
-      // ★iOS対策：アドレスバーの伸縮で100vhがズレるのを防ぐ
-  function setVhUnit(){
-    const vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty("--vh", `${vh}px`);
-  }
-  setVhUnit();
-  window.addEventListener("resize", setVhUnit, { passive: true });
-  window.addEventListener("orientationchange", setVhUnit, { passive: true });
+    // ★iOS対策：アドレスバーの伸縮で100vhがズレるのを防ぐ
+    function setVhUnit(){
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    }
+    setVhUnit();
+    window.addEventListener("resize", setVhUnit, { passive: true });
+    window.addEventListener("orientationchange", setVhUnit, { passive: true });
 
-    /* =========================
-       SVG Icons (カラフル雑多)
-    ========================= */
-    function svgWrap(inner){ return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`; }
+    /* =========================================================
+       ★差し替え前提：ICON_IMAGES にファイルを並べるだけ
+       - PNGでもSVGでもOK（imgで読み込む）
+       - 例： /icons/about.png  または /icons/about.svg
+       - ファイルが無いキーは「プレースホルダSVG」で表示（保険）
+    ========================================================= */
+    const ICON_IMAGES = {
+      // --- メイン ---
+      about:    "icons/about.svg",
+      service:  "icons/service.svg",
+      works:    "icons/works.svg",
+      news:     "icons/news.svg",
+      price:    "icons/price.svg",
+      faq:      "icons/faq.svg",
+      contact:  "icons/contact.svg",
+      access:   "icons/access.svg",
+      blog:     "icons/blog.svg",
+      team:     "icons/team.svg",
+      recruit:  "icons/recruit.svg",
+      legal:    "icons/legal.svg",
 
-    const ICON_SVGS = {
-      about: svgUser(),
-      service: svgStarBurst(),
-      works: svgPhoto(),
-      news: svgPaper(),
-      price: svgCard(),
-      faq: svgHelp(),
-      contact: svgMail(),
-      access: svgPin(),
-      blog: svgPen(),
-      team: svgUsers(),
-      recruit: svgBriefcase(),
-      legal: svgDoc(),
+      feature:  "icons/feature.svg",
+      campaign: "icons/campaign.svg",
+      plan:     "icons/plan.svg",
+      review:   "icons/review.svg",
+      tips:     "icons/tips.svg",
+      guide:    "icons/guide.svg",
+      docs:     "icons/docs.svg",
+      support:  "icons/support.svg",
+      bonus:    "icons/bonus.svg",
+      stats:    "icons/stats.svg",
+      lead:     "icons/lead.svg",
+      settings: "icons/settings.svg",
 
-      feature: svgSpark(),
-      campaign: svgFlame(),
-      plan: svgBox(),
-      review: svgBadge(),
-      tips: svgBrain(),
-      guide: svgCompass(),
-      docs: svgReceipt(),
-      support: svgWrench(),
-      bonus: svgGift(),
-      stats: svgChart(),
-      lead: svgMagnet(),
-      settings: svgGear(),
-
-      tel: svgPhone(),
-      chat: svgChat(),
-      map: svgMap(),
-      mail: svgInbox(),
+      // --- ドック ---
+      tel:      "icons/tel.svg",
+      chat:     "icons/chat.svg",
+      map:      "icons/map.svg",
+      mail:     "icons/mail.svg",
     };
 
-    function mountSvgs(){
+    function placeholderSvg(){
+      // 差し替え忘れが分かる用のプレースホルダ（適当カラフル）
+      return `
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" fill="rgba(255,255,255,.12)"/>
+          <path d="M7 15l4-6 3 4 3-2" stroke="#8EECF5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9" cy="9" r="1.5" fill="#FFD166"/>
+          <circle cx="16.5" cy="7.5" r="1.3" fill="#EF476F"/>
+        </svg>
+      `;
+    }
+
+    function mountIcons(){
       document.querySelectorAll(".svgicon").forEach(el=>{
         const key = el.dataset.icon;
-        el.innerHTML = ICON_SVGS[key] || ICON_SVGS["service"] || "";
+        const src = ICON_IMAGES[key];
+
+        if(src){
+          const alt = key;
+          el.innerHTML = `<img src="${src}" alt="${alt}" draggable="false" loading="lazy">`;
+        }else{
+          el.innerHTML = placeholderSvg();
+        }
       });
     }
-    mountSvgs();
+    mountIcons();
 
     /* =========================
        Pagination Dots（SVGっぽ＋自動生成）
@@ -601,7 +638,6 @@ A
     const dotsWrap = document.getElementById("dots");
 
     function dotSvg(a,b){
-      // idが被らないようにユニーク化
       const gid = "g" + Math.random().toString(16).slice(2);
       return `
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -657,12 +693,10 @@ A
     }
 
     buildDots();
-
     pages.addEventListener("scroll", () => {
       requestAnimationFrame(() => setActiveDot(currentPageIndex()));
     });
 
-    // ページを増減した時に自動追従させたい場合に備えて（保険）
     window.addEventListener("resize", () => {
       const before = dotsWrap.querySelectorAll(".pdot").length;
       const now = pages.querySelectorAll(".page").length;
@@ -720,7 +754,6 @@ A
     let suppressNextClick = false;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
     function rect(el){ return el.getBoundingClientRect(); }
 
     function setModalContent(key){
@@ -729,12 +762,18 @@ A
       modalSub.textContent = d.sub;
       modalBody.innerHTML = d.body;
       modalBody.scrollTop = 0;
-      modalBadge.innerHTML = ICON_SVGS[key] || "";
+
+      // ★バッジも画像優先（なければプレースホルダ）
+      const src = ICON_IMAGES[key];
+      modalBadge.innerHTML = src
+        ? `<img src="${src}" alt="" draggable="false">`
+        : placeholderSvg();
     }
 
     function openFrom(btn){
       if(isOpen) return;
       isOpen = true;
+      modal.classList.remove("is-closing");
       lastTrigger = btn;
 
       setModalContent(btn.dataset.app);
@@ -813,6 +852,8 @@ A
       if(!isOpen) return;
       isOpen = false;
 
+      modal.classList.add("is-closing");
+
       const btn = lastTrigger;
       const icon = btn?.querySelector(".icon");
       if(!icon){ hardClose(); return; }
@@ -848,6 +889,7 @@ A
         { duration: dur, easing, fill: "forwards" }
       ).onfinish = () => {
         hardClose();
+        modal.classList.remove("is-closing");
         btn.focus({ preventScroll: true });
       };
     }
@@ -878,370 +920,192 @@ A
       openFrom(btn);
     });
 
-/* =========================
-   全デバイス対応：どこ掴んでも横スライド（statusbar / dock は除外）
-   - アイコン上でもドラッグOK
-   - 動かなければアイコンはモーダル開く
-========================= */
-(() => {
-  const dragArea = document.querySelector(".home"); // メイン領域（statusbar除外の内側）
-  const DRAG_THRESHOLD = 8;  // これ以上動いたらドラッグ扱い
-  const INTENT_THRESHOLD = 6; // 横意図判定
-
-  let isDown = false;
-  let startX = 0, startY = 0;
-  let startLeft = 0;
-  let movedX = 0;
-  let decided = false;    // 横ドラッグにするかの意思決定済み
-  let isHorizontal = false;
-  let pendingApp = null;  // 動かなければ開く対象
-  let pointerId = null;
-
-  const isExcludedTarget = (t) => {
-    // statusbarとdockは掴んでもスライドさせない
-    if (t.closest(".statusbar")) return true;
-    if (t.closest(".dock")) return true;
-
-    // ドットはクリックしやすく（ただしドラッグしたいならこの行を消してOK）
-    if (t.closest(".pdot")) return true;
-
-    return false;
-  };
-
-  dragArea.addEventListener("pointerdown", (e) => {
-    if (isOpen) return;                 // モーダル中は無効
-    if (isExcludedTarget(e.target)) return;
-
-    isDown = true;
-    decided = false;
-    isHorizontal = false;
-    movedX = 0;
-    wasDragging = false;
-
-    startX = e.clientX;
-    startY = e.clientY;
-    startLeft = pages.scrollLeft;
-
-    // アイコン上なら「動かなければ開く」候補にする
-    pendingApp = e.target.closest(".app") || null;
-
-    pages.classList.add("is-dragging");
-
-    pointerId = e.pointerId;
-    dragArea.setPointerCapture(pointerId);
-
-    // iOSで preventDefault を効かせるために passive:false が必要（下で指定済み）
-  }, { passive: false });
-
-  dragArea.addEventListener("pointermove", (e) => {
-    if (!isDown) return;
-    if (pointerId !== null && e.pointerId !== pointerId) return;
-
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    // どっち方向にしたいかを早めに決める（横意図が出たら横）
-    if (!decided) {
-      if (Math.abs(dx) > INTENT_THRESHOLD || Math.abs(dy) > INTENT_THRESHOLD) {
-        decided = true;
-        isHorizontal = Math.abs(dx) >= Math.abs(dy);
-      }
-    }
-
-    if (!isHorizontal) return;
-
-    // 横ドラッグに入ったら、ブラウザのスクロール/選択を止める（スマホでも効く）
-    e.preventDefault();
-
-    movedX = Math.max(movedX, Math.abs(dx));
-    pages.scrollLeft = startLeft - dx;
-
-    if (movedX > DRAG_THRESHOLD) {
-      wasDragging = true;
-    }
-  }, { passive: false });
-
-  const end = (e) => {
-    if (!isDown) return;
-    if (pointerId !== null && e.pointerId !== pointerId) return;
-
-    isDown = false;
-    pages.classList.remove("is-dragging");
-
-    try { dragArea.releasePointerCapture(pointerId); } catch(_){}
-    pointerId = null;
-
-    // 動かなかった & アイコン上 → ここでモーダルを開く（クリックより優先）
-    if (pendingApp && !wasDragging) {
-      openFrom(pendingApp);
-      suppressNextClick = true; // clickハンドラで二重起動しないように
-    }
-    pendingApp = null;
-
-    if (wasDragging) {
-      setTimeout(() => (wasDragging = false), 0);
-    }
-  };
-
-  dragArea.addEventListener("pointerup", end);
-  dragArea.addEventListener("pointercancel", end);
-})();
-
-/* =====================================================
-   iOS Safari 完全フォールバック
-   - pointer が効かない端末用
-   - アイコン上でも必ずスワイプが通る
-   - 動かなければタップ（モーダル）
-===================================================== */
-(() => {
-  // pointerが使える & iOSでなければ何もしない
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  if (!isIOS) return;
-
-  const dragArea = document.querySelector(".home");
-  const DRAG_THRESHOLD = 10;   // px
-  const INTENT_THRESHOLD = 6;  // 横意図判定
-
-  let startX = 0, startY = 0;
-  let startLeft = 0;
-  let movedX = 0;
-  let decided = false;
-  let isHorizontal = false;
-  let isTouching = false;
-  let pendingApp = null;
-
-  const isExcludedTarget = (t) => {
-    if (t.closest(".statusbar")) return true;
-    if (t.closest(".dock")) return true;
-    if (t.closest(".pdot")) return true;
-    return false;
-  };
-
-  dragArea.addEventListener("touchstart", (e) => {
-    if (isOpen) return;
-    const t = e.target;
-    if (isExcludedTarget(t)) return;
-
-    const touch = e.touches[0];
-    isTouching = true;
-    decided = false;
-    isHorizontal = false;
-    movedX = 0;
-    wasDragging = false;
-
-    startX = touch.clientX;
-    startY = touch.clientY;
-    startLeft = pages.scrollLeft;
-
-    pendingApp = t.closest(".app") || null;
-  }, { passive: true });
-
-  dragArea.addEventListener("touchmove", (e) => {
-    if (!isTouching) return;
-    const touch = e.touches[0];
-
-    const dx = touch.clientX - startX;
-    const dy = touch.clientY - startY;
-
-    // 意図判定
-    if (!decided) {
-      if (Math.abs(dx) > INTENT_THRESHOLD || Math.abs(dy) > INTENT_THRESHOLD) {
-        decided = true;
-        isHorizontal = Math.abs(dx) >= Math.abs(dy);
-      }
-    }
-
-    if (!isHorizontal) return;
-
-    // 横スワイプ確定 → ブラウザスクロール殺す
-    e.preventDefault();
-
-    movedX = Math.max(movedX, Math.abs(dx));
-    pages.scrollLeft = startLeft - dx;
-
-    if (movedX > DRAG_THRESHOLD) {
-      wasDragging = true;
-    }
-  }, { passive: false });
-
-  dragArea.addEventListener("touchend", () => {
-    if (!isTouching) return;
-    isTouching = false;
-
-    // 動かなかった & アイコン上 → モーダル
-    if (pendingApp && !wasDragging) {
-      openFrom(pendingApp);
-      suppressNextClick = true;
-    }
-
-    pendingApp = null;
-
-    if (wasDragging) {
-      setTimeout(() => (wasDragging = false), 0);
-    }
-  });
-
-  dragArea.addEventListener("touchcancel", () => {
-    isTouching = false;
-    pendingApp = null;
-  });
-})();
-
-
     /* =========================
-       SVGアイコン 定義
+       全デバイス対応：どこ掴んでも横スライド（statusbar / dock は除外）
     ========================= */
-    function svgUser(){ return svgWrap(`
-      <path d="M12 12.6c2.9 0 5-2.2 5-4.9C17 4.9 14.9 3 12 3S7 4.9 7 7.7c0 2.7 2.1 4.9 5 4.9Z" fill="#FFD166"/>
-      <path d="M4.3 21c1.1-4.1 4-6.2 7.7-6.2s6.6 2.1 7.7 6.2" stroke="#06D6A0" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="18.5" cy="6.2" r="2.2" fill="#EF476F" opacity=".9"/>
-    `); }
-    function svgStarBurst(){ return svgWrap(`
-      <path d="M12 2l2.4 4.8L20 9l-4 4 .9 5.6L12 16.9 7.1 18.6 8 13 4 9l5.6-2.2L12 2Z" fill="#EF476F"/>
-      <path d="M12 6.2l1.2 2.4 2.7 1.1-1.9 1.9.4 2.7-2.4-1.3-2.4 1.3.4-2.7-1.9-1.9 2.7-1.1L12 6.2Z" fill="#FFD166"/>
-      <path d="M3 12h3" stroke="#118AB2" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgPhoto(){ return svgWrap(`
-      <rect x="3" y="5" width="18" height="14" rx="3" fill="#118AB2"/>
-      <path d="M6.5 15.5l3.2-3.2 3.3 3.3 2.2-2.2 2.3 2.3" stroke="#FFD166" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="8.5" cy="9" r="1.6" fill="#EF476F"/>
-    `); }
-    function svgPaper(){ return svgWrap(`
-      <path d="M7 3h7l3 3v15H7V3Z" fill="#8EECF5"/>
-      <path d="M14 3v4h4" fill="#FFAFCC"/>
-      <path d="M9 10h8M9 13h8M9 16h6" stroke="#2B2D42" stroke-width="1.7" stroke-linecap="round"/>
-      <circle cx="6" cy="7" r="2" fill="#C77DFF"/>
-    `); }
-    function svgCard(){ return svgWrap(`
-      <rect x="3" y="6" width="18" height="12" rx="3" fill="#06D6A0"/>
-      <rect x="3" y="9" width="18" height="2.4" fill="#073B4C" opacity=".55"/>
-      <rect x="6" y="13" width="6" height="2" rx="1" fill="#FFD166"/>
-      <circle cx="18" cy="15" r="2" fill="#EF476F"/>
-    `); }
-    function svgHelp(){ return svgWrap(`
-      <path d="M12 3c5 0 9 3.6 9 8.1 0 3.1-1.8 5.8-4.6 7.2l.6 2.7-3-1.7c-.6.1-1.2.2-1.9.2-5 0-9-3.6-9-8.1S7 3 12 3Z" fill="#FFD166"/>
-      <path d="M10.3 9.2c.2-1.4 1.3-2.4 2.9-2.4 1.8 0 3 1 3 2.6 0 1.1-.6 1.8-1.7 2.3-.9.4-1.2.7-1.2 1.7v.3" stroke="#073B4C" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="12.9" cy="16.9" r="1.1" fill="#EF476F"/>
-    `); }
-    function svgMail(){ return svgWrap(`
-      <rect x="3.2" y="6" width="17.6" height="12" rx="3" fill="#FFAFCC"/>
-      <path d="M4.5 7.7l7.5 5.2 7.5-5.2" stroke="#2B2D42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M6.3 17l4.9-4" stroke="#C77DFF" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgPin(){ return svgWrap(`
-      <path d="M12 21s6-5.1 6-10.3C18 6.5 15.3 4 12 4S6 6.5 6 10.7C6 15.9 12 21 12 21Z" fill="#EF476F"/>
-      <circle cx="12" cy="10.6" r="2.3" fill="#FFD166"/>
-      <path d="M5 19h14" stroke="#06D6A0" stroke-width="2" stroke-linecap="round" opacity=".9"/>
-    `); }
-    function svgPen(){ return svgWrap(`
-      <path d="M5 19l3.3-.7L18 8.6 15.4 6 5.7 15.7 5 19Z" fill="#C77DFF"/>
-      <path d="M14.7 6.7l2.6 2.6" stroke="#2B2D42" stroke-width="2" stroke-linecap="round"/>
-      <path d="M4 20h16" stroke="#8EECF5" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgUsers(){ return svgWrap(`
-      <circle cx="9" cy="10" r="3" fill="#8EECF5"/>
-      <circle cx="16.5" cy="9" r="2.6" fill="#FFD166"/>
-      <path d="M3.8 20c.8-3.2 3.1-5 6.1-5s5.3 1.8 6.1 5" stroke="#2B2D42" stroke-width="2" stroke-linecap="round"/>
-      <path d="M14 20c.4-2.3 1.8-3.7 3.8-3.7 1.4 0 2.6.6 3.2 1.7" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgBriefcase(){ return svgWrap(`
-      <rect x="4" y="8" width="16" height="11" rx="3" fill="#118AB2"/>
-      <path d="M9 8V6.8C9 5.8 9.8 5 10.8 5h2.4C14.2 5 15 5.8 15 6.8V8" stroke="#FFD166" stroke-width="2" stroke-linecap="round"/>
-      <path d="M4 12h16" stroke="#073B4C" stroke-width="2" opacity=".55"/>
-      <circle cx="12" cy="13.5" r="1.2" fill="#EF476F"/>
-    `); }
-    function svgDoc(){ return svgWrap(`
-      <path d="M7 2h8l3 3v17H7V2Z" fill="#06D6A0"/>
-      <path d="M15 2v4h4" fill="#FFD166"/>
-      <path d="M9 9h7M9 12h7M9 15h5" stroke="#073B4C" stroke-width="2" stroke-linecap="round"/>
-      <path d="M6 6l1-1" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgSpark(){ return svgWrap(`
-      <path d="M12 2l1.2 5.2L18 9l-4.8 1.8L12 16l-1.2-5.2L6 9l4.8-1.8L12 2Z" fill="#FFD166"/>
-      <circle cx="19" cy="6" r="2" fill="#EF476F"/>
-      <circle cx="5" cy="17" r="2" fill="#8EECF5"/>
-    `); }
-    function svgFlame(){ return svgWrap(`
-      <path d="M12 2c2.3 3 1 5.3 3.2 7.2 1.8 1.5 3.8 3.2 3.8 6.1 0 4-3.3 6.7-7 6.7s-7-2.7-7-6.7c0-3.4 2.3-5.5 4.6-7.7C12.7 5.6 11.7 4 12 2Z" fill="#EF476F"/>
-      <path d="M12 10c1.6 2 .7 3.4 2.2 4.7 1 .9 1.8 1.9 1.8 3.3 0 2.2-1.9 3.7-4 3.7s-4-1.5-4-3.7c0-1.9 1.2-3.1 2.6-4.3.9-.8 1.6-1.6 1.4-3.7Z" fill="#FFD166" opacity=".9"/>
-    `); }
-    function svgBox(){ return svgWrap(`
-      <path d="M4 9l8-4 8 4-8 4-8-4Z" fill="#8EECF5"/>
-      <path d="M4 9v9l8 4v-9L4 9Z" fill="#06D6A0"/>
-      <path d="M20 9v9l-8 4v-9l8-4Z" fill="#118AB2"/>
-      <path d="M12 13v9" stroke="#2B2D42" stroke-width="2" opacity=".5"/>
-    `); }
-    function svgBadge(){ return svgWrap(`
-      <circle cx="12" cy="10" r="6" fill="#FFD166"/>
-      <path d="M9.5 16.5l.6 5 2-1.6 2 1.6.6-5" fill="#EF476F"/>
-      <path d="M10 10.2l1.4 1.4 2.8-3" stroke="#073B4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    `); }
-    function svgBrain(){ return svgWrap(`
-      <path d="M9.2 8.2c-.6-2 1-3.8 3.1-3.8 1.5 0 2.7.9 3.1 2.2 1.8.1 3.1 1.6 3.1 3.4 0 1.1-.5 2.1-1.3 2.8.4.5.6 1.2.6 2 0 2-1.6 3.6-3.6 3.6-.8 0-1.5-.2-2.1-.7-.6.5-1.3.7-2.1.7-2 0-3.6-1.6-3.6-3.6 0-.8.2-1.5.6-2-.9-.7-1.3-1.7-1.3-2.8 0-1.7 1.2-3.1 2.8-3.4Z" fill="#C77DFF"/>
-      <path d="M9.2 9.2c.7.3 1.2.9 1.2 1.7M14.8 9.2c-.7.3-1.2.9-1.2 1.7" stroke="#2B2D42" stroke-width="1.8" stroke-linecap="round"/>
-      <circle cx="19.2" cy="14.8" r="2" fill="#06D6A0"/>
-    `); }
-    function svgCompass(){ return svgWrap(`
-      <circle cx="12" cy="12" r="9" fill="#118AB2"/>
-      <circle cx="12" cy="12" r="6" fill="#8EECF5"/>
-      <path d="M10 14l4-4 1 5-5 1Z" fill="#EF476F"/>
-      <path d="M14 10l-4 4-1-5 5-1Z" fill="#FFD166"/>
-    `); }
-    function svgReceipt(){ return svgWrap(`
-      <path d="M7 3h10v18l-2-1-2 1-2-1-2 1-2-1-2 1V3Z" fill="#FFAFCC"/>
-      <path d="M9 8h6M9 11h6M9 14h4" stroke="#2B2D42" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="18.5" cy="7" r="2" fill="#06D6A0"/>
-    `); }
-    function svgWrench(){ return svgWrap(`
-      <path d="M14.5 5.3a4.3 4.3 0 0 0 5 5l-4.2 4.2-2.2-2.2L7.2 18.2a2.2 2.2 0 0 1-3.1-3.1l5.9-5.9-2.2-2.2 4.2-4.2Z" fill="#06D6A0"/>
-      <circle cx="6" cy="18" r="2" fill="#EF476F"/>
-    `); }
-    function svgGift(){ return svgWrap(`
-      <rect x="4" y="10" width="16" height="10" rx="2" fill="#FFD166"/>
-      <rect x="11" y="10" width="2" height="10" fill="#EF476F"/>
-      <rect x="4" y="10" width="16" height="3" fill="#118AB2" opacity=".75"/>
-      <path d="M12 10V7" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
-      <path d="M10.5 7.5c-1.2-1.2-3.1-1.1-3.8.1-.7 1.2.3 2.9 3.8 2.4" fill="#8EECF5"/>
-      <path d="M13.5 7.5c1.2-1.2 3.1-1.1 3.8.1.7 1.2-.3 2.9-3.8 2.4" fill="#06D6A0"/>
-    `); }
-    function svgChart(){ return svgWrap(`
-      <rect x="4" y="4" width="16" height="16" rx="3" fill="#073B4C" opacity=".85"/>
-      <path d="M7 16v-3M11 16V9M15 16v-5M19 16V7" stroke="#8EECF5" stroke-width="2" stroke-linecap="round"/>
-      <path d="M7 11l4-3 4 2 4-5" stroke="#FFD166" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    `); }
-    function svgMagnet(){ return svgWrap(`
-      <path d="M8 3h3v7a1 1 0 0 1-1 1H8V3Z" fill="#EF476F"/>
-      <path d="M13 3h3v7a1 1 0 0 1-1 1h-2V3Z" fill="#118AB2"/>
-      <path d="M8 11v3a4 4 0 0 0 8 0v-3" stroke="#FFD166" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="6.2" cy="14.2" r="2" fill="#06D6A0"/>
-    `); }
-    function svgGear(){ return svgWrap(`
-      <path d="M12 2l1 2.3 2.5.6-.9 2.4 1.8 1.8-2.4.9-.6 2.5L12 14l-1-2.3-2.5-.6.9-2.4L7.6 6.9l2.4-.9.6-2.5L12 2Z" fill="#C77DFF"/>
-      <circle cx="12" cy="8.2" r="2.3" fill="#8EECF5"/>
-      <path d="M5 18h14" stroke="#FFD166" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgPhone(){ return svgWrap(`
-      <path d="M7.5 4.5l2.4-.7 1.7 4.3-2 .9c.6 2 2.2 3.6 4.2 4.2l.9-2 4.3 1.7-.7 2.4c-.3 1-1.4 1.6-2.4 1.3-6.8-1.9-12-7.1-13.9-13.9-.3-1 .3-2.1 1.3-2.4Z" fill="#06D6A0"/>
-      <circle cx="18.5" cy="6.5" r="2" fill="#EF476F"/>
-    `); }
-    function svgChat(){ return svgWrap(`
-      <path d="M4 6.8C4 5.3 5.2 4 6.8 4h10.4C18.8 4 20 5.3 20 6.8v6.4c0 1.6-1.2 2.8-2.8 2.8H10l-3.5 3v-3H6.8C5.2 16 4 14.7 4 13.2V6.8Z" fill="#8EECF5"/>
-      <circle cx="9" cy="10" r="1.2" fill="#2B2D42"/>
-      <circle cx="12" cy="10" r="1.2" fill="#2B2D42"/>
-      <circle cx="15" cy="10" r="1.2" fill="#2B2D42"/>
-      <path d="M18 6l2-2" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
-    `); }
-    function svgMap(){ return svgWrap(`
-      <path d="M4 6l6-2 4 2 6-2v14l-6 2-4-2-6 2V6Z" fill="#FFD166"/>
-      <path d="M10 4v14M14 6v14" stroke="#2B2D42" stroke-width="2" opacity=".55"/>
-      <path d="M16.5 10.5c0 2-2.5 4.7-2.5 4.7s-2.5-2.7-2.5-4.7c0-1.4 1.1-2.5 2.5-2.5s2.5 1.1 2.5 2.5Z" fill="#EF476F"/>
-      <circle cx="14" cy="10.5" r="1" fill="#8EECF5"/>
-    `); }
-    function svgInbox(){ return svgWrap(`
-      <path d="M5 5h14l2 7v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7l2-7Z" fill="#FFAFCC"/>
-      <path d="M3 12h6l1.5 2h3L15 12h6" stroke="#2B2D42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="6.5" cy="7.5" r="2" fill="#06D6A0"/>
-    `); }
+    (() => {
+      const dragArea = document.querySelector(".home");
+      const DRAG_THRESHOLD = 8;
+      const INTENT_THRESHOLD = 6;
+
+      let isDown = false;
+      let startX = 0, startY = 0;
+      let startLeft = 0;
+      let movedX = 0;
+      let decided = false;
+      let isHorizontal = false;
+      let pendingApp = null;
+      let pointerId = null;
+
+      const isExcludedTarget = (t) => {
+        if (t.closest(".statusbar")) return true;
+        if (t.closest(".dock")) return true;
+        if (t.closest(".pdot")) return true;
+        return false;
+      };
+
+      dragArea.addEventListener("pointerdown", (e) => {
+        if (isOpen) return;
+        if (isExcludedTarget(e.target)) return;
+
+        isDown = true;
+        decided = false;
+        isHorizontal = false;
+        movedX = 0;
+        wasDragging = false;
+
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = pages.scrollLeft;
+
+        pendingApp = e.target.closest(".app") || null;
+
+        pages.classList.add("is-dragging");
+
+        pointerId = e.pointerId;
+        dragArea.setPointerCapture(pointerId);
+      }, { passive: false });
+
+      dragArea.addEventListener("pointermove", (e) => {
+        if (!isDown) return;
+        if (pointerId !== null && e.pointerId !== pointerId) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        if (!decided) {
+          if (Math.abs(dx) > INTENT_THRESHOLD || Math.abs(dy) > INTENT_THRESHOLD) {
+            decided = true;
+            isHorizontal = Math.abs(dx) >= Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        e.preventDefault();
+
+        movedX = Math.max(movedX, Math.abs(dx));
+        pages.scrollLeft = startLeft - dx;
+
+        if (movedX > DRAG_THRESHOLD) {
+          wasDragging = true;
+        }
+      }, { passive: false });
+
+      const end = (e) => {
+        if (!isDown) return;
+        if (pointerId !== null && e.pointerId !== pointerId) return;
+
+        isDown = false;
+        pages.classList.remove("is-dragging");
+
+        try { dragArea.releasePointerCapture(pointerId); } catch(_){}
+        pointerId = null;
+
+        if (pendingApp && !wasDragging) {
+          openFrom(pendingApp);
+          suppressNextClick = true;
+        }
+        pendingApp = null;
+
+        if (wasDragging) {
+          setTimeout(() => (wasDragging = false), 0);
+        }
+      };
+
+      dragArea.addEventListener("pointerup", end);
+      dragArea.addEventListener("pointercancel", end);
+    })();
+
+    /* iOS Safari 完全フォールバック（touch） */
+    (() => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (!isIOS) return;
+
+      const dragArea = document.querySelector(".home");
+      const DRAG_THRESHOLD = 10;
+      const INTENT_THRESHOLD = 6;
+
+      let startX = 0, startY = 0;
+      let startLeft = 0;
+      let movedX = 0;
+      let decided = false;
+      let isHorizontal = false;
+      let isTouching = false;
+      let pendingApp = null;
+
+      const isExcludedTarget = (t) => {
+        if (t.closest(".statusbar")) return true;
+        if (t.closest(".dock")) return true;
+        if (t.closest(".pdot")) return true;
+        return false;
+      };
+
+      dragArea.addEventListener("touchstart", (e) => {
+        if (isOpen) return;
+        const t = e.target;
+        if (isExcludedTarget(t)) return;
+
+        const touch = e.touches[0];
+        isTouching = true;
+        decided = false;
+        isHorizontal = false;
+        movedX = 0;
+        wasDragging = false;
+
+        startX = touch.clientX;
+        startY = touch.clientY;
+        startLeft = pages.scrollLeft;
+
+        pendingApp = t.closest(".app") || null;
+      }, { passive: true });
+
+      dragArea.addEventListener("touchmove", (e) => {
+        if (!isTouching) return;
+        const touch = e.touches[0];
+
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        if (!decided) {
+          if (Math.abs(dx) > INTENT_THRESHOLD || Math.abs(dy) > INTENT_THRESHOLD) {
+            decided = true;
+            isHorizontal = Math.abs(dx) >= Math.abs(dy);
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        e.preventDefault();
+
+        movedX = Math.max(movedX, Math.abs(dx));
+        pages.scrollLeft = startLeft - dx;
+
+        if (movedX > DRAG_THRESHOLD) {
+          wasDragging = true;
+        }
+      }, { passive: false });
+
+      dragArea.addEventListener("touchend", () => {
+        if (!isTouching) return;
+        isTouching = false;
+
+        if (pendingApp && !wasDragging) {
+          openFrom(pendingApp);
+          suppressNextClick = true;
+        }
+        pendingApp = null;
+
+        if (wasDragging) {
+          setTimeout(() => (wasDragging = false), 0);
+        }
+      });
+
+      dragArea.addEventListener("touchcancel", () => {
+        isTouching = false;
+        pendingApp = null;
+      });
+    })();
   </script>
 </body>
 </html>
