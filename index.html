@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>nana marche | Home Grid</title>
+
+  <style>
+    :root{
+      --shell-w: 390px;
+      --radius: 28px;
+
+      /* ★壁紙：JSの setWallpaper("wallpaper.jpg") で差し替え */
+      --wallpaper: url("");
+
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --shadow: 0 30px 90px rgba(0,0,0,.55);
+
+      /* アイコン周り */
+      --grid-gap: 16px;
+      --icon-radius: 16px;
+      --icon-pad: 10px;
+      --label-font: 11px;
+      --svg-size: 28px;
+
+      /* ページドット */
+      --dot-size: 18px;
+      --dot-gap: 10px;
+      --dot-stroke: rgba(255,255,255,.25);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
+      color: var(--text);
+      overflow-x:hidden;
+
+      /* PC余白：木目テーブル風（画像無し） */
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(255,255,255,.08), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(255,255,255,.06), transparent 60%),
+        linear-gradient(90deg, rgba(0,0,0,.18), rgba(0,0,0,0)),
+        repeating-linear-gradient(
+          90deg,
+          #6b4b2d 0px, #6b4b2d 10px,
+          #744f2e 10px, #744f2e 22px,
+          #624327 22px, #624327 34px,
+          #7a5631 34px, #7a5631 52px
+        );
+
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding: 18px 12px 40px;
+    }
+
+    /* スマホ筐体 */
+    .shell{
+      width: min(var(--shell-w), 100%);
+      border-radius: var(--radius);
+      overflow:hidden;
+      position:relative;
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: var(--shadow);
+
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.20)),
+        var(--wallpaper),
+        radial-gradient(900px 520px at 20% 20%, rgba(0,200,255,.22), transparent 55%),
+        radial-gradient(800px 520px at 90% 30%, rgba(255,120,200,.18), transparent 55%),
+        radial-gradient(900px 720px at 40% 95%, rgba(140,255,170,.14), transparent 60%),
+        linear-gradient(180deg, rgba(8,10,16,.92), rgba(8,10,16,.88));
+      background-size: cover, cover, auto, auto, auto, auto;
+      background-position: center, center, center, center, center, center;
+      background-repeat: no-repeat;
+    }
+
+    /* ステータスバー */
+    .statusbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 14px 16px 10px;
+      font-size: 12px;
+      letter-spacing:.05em;
+      color: rgba(255,255,255,.78);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.04);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .brand{
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: lowercase;
+    }
+    .status-right{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color: rgba(255,255,255,.72);
+    }
+    .dot{
+      width:8px;height:8px;border-radius:999px;
+      background: rgba(255,255,255,.55);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+    }
+
+    /* メイン */
+    .home{
+      padding: 14px 16px 16px;
+      min-height: 720px;
+      display:flex;
+      flex-direction:column;
+
+      /* PCドラッグ時のテキスト選択を抑制 */
+      user-select: none;
+    }
+
+    .pager{ margin-top: 6px; }
+
+    .pages{
+      display:flex;
+      gap: 18px;
+      overflow-x:auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior:smooth;
+      scrollbar-width:none;
+      padding: 4px 4px 0;
+
+      touch-action: pan-y; /* 縦は許す */
+      user-select:none;
+      cursor: grab;
+    }
+    .pages::-webkit-scrollbar{ display:none; }
+    .pages.is-dragging{ cursor: grabbing; }
+
+    .page{
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      padding: 4px 0 0;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--grid-gap);
+      margin-top: 2px;
+    }
+
+    .app{
+      appearance:none;
+      border:none;
+      background: transparent;
+      color: inherit;
+      padding:0;
+      cursor:pointer;
+      text-align:center;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .icon{
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: var(--icon-radius);
+      padding: var(--icon-pad);
+
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 14px 34px rgba(0,0,0,.30);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+      backdrop-filter: blur(10px);
+    }
+    .icon::before{
+      content:"";
+      position:absolute; inset:-80% -80%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 62%);
+      transform: rotate(15deg);
+      opacity:.95;
+    }
+
+    .svgicon{
+      position:relative;
+      width: var(--svg-size);
+      height: var(--svg-size);
+      display:block;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.35));
+    }
+    .svgicon svg{ width:100%; height:100%; display:block; }
+
+    .label{
+      margin-top: 7px;
+      font-size: var(--label-font);
+      color: rgba(255,255,255,.84);
+      letter-spacing:.01em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* 下部固定 */
+    .bottom{
+      margin-top: auto;
+      padding-top: 18px;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      padding-bottom: 14px;
+    }
+
+    /* SVGっぽドット */
+    .dots{
+      display:flex;
+      justify-content:center;
+      gap: var(--dot-gap);
+      padding: 2px 0 4px;
+    }
+    .pdot{
+      width: var(--dot-size);
+      height: var(--dot-size);
+      border: 1px solid var(--dot-stroke);
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      padding:0;
+      position:relative;
+      backdrop-filter: blur(10px);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pdot svg{ width: 12px; height: 12px; display:block; opacity:.75; }
+    .pdot::after{
+      content:"";
+      position:absolute;
+      inset:-6px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), transparent 60%);
+      opacity:.7;
+      pointer-events:none;
+    }
+    .pdot.is-active{
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.38);
+      box-shadow:
+        0 10px 22px rgba(0,0,0,.25),
+        0 0 0 4px rgba(255,255,255,.06);
+      transform: translateY(-1px);
+    }
+    .pdot.is-active svg{ opacity: 1; }
+
+    /* ドック（メインと同サイズ同見た目） */
+    .dock{
+      padding: 12px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.08));
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30);
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    /* ===== モダール ===== */
+    .overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.0);
+      backdrop-filter: blur(0px);
+      display:none;
+      z-index: 999;
+    }
+    .overlay.is-open{ display:block; }
+
+    .modal{
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 10px; height: 10px;
+      border-radius: 18px;
+      background: rgba(20,24,32,.78);
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:none;
+    }
+    .modal.is-open{ display:block; }
+
+    .modal__top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 14px 14px 10px;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(12px);
+    }
+    .modal__title{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .modal__badge{
+      width: 34px; height: 34px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.14);
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+    }
+    .modal__badge svg{ width: 18px; height: 18px; display:block; }
+    .modal__title h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.02em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .modal__title p{
+      margin:2px 0 0;
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.92);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-size: 12px;
+    }
+
+    .modal__body{
+      padding: 14px 14px 18px;
+      height: calc(100% - 56px);
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .card{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      padding: 14px;
+      margin: 0 0 12px;
+    }
+    .card h3{ margin:0 0 8px; font-size: 13px; letter-spacing:.02em; }
+    .card p{ margin:0; font-size: 13px; line-height: 1.7; color: rgba(255,255,255,.84); }
+    .list{ margin: 10px 0 0; padding-left: 18px; color: rgba(255,255,255,.82); line-height: 1.8; font-size: 13px; }
+
+    /* ★スマホ：フル画面 */
+    @media (max-width: 540px){
+      body{
+        padding: 0;
+        background: #080a10;
+        align-items:stretch;
+      }
+      .shell{
+        width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
+      .home{ min-height: calc(100vh - 48px); }
+      .pages{ cursor: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .pages{ scroll-behavior:auto; }
+      .pdot{ transform:none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="shell" aria-label="ホーム">
+    <div class="statusbar">
+      <div class="brand">nana marche</div>
+      <div class="status-right">
+        <span>Wi-Fi</span><span>100%</span><span class="dot" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <section class="home">
+      <div class="pager">
+        <div class="pages" id="pages" aria-label="ページ">
+          <!-- Page 1 -->
+          <div class="page">
+            <div class="grid">
+              <button class="app" data-app="about"><div class="icon"><span class="svgicon" data-icon="about"></span></div><div class="label">About</div></button>
+              <button class="app" data-app="service"><div class="icon"><span class="svgicon" data-icon="service"></span></div><div class="label">Service</div></button>
+              <button class="app" data-app="works"><div class="icon"><span class="svgicon" data-icon="works"></span></div><div class="label">Works</div></button>
+              <button class="app" data-app="news"><div class="icon"><span class="svgicon" data-icon="news"></span></div><div class="label">News</div></button>
+
+              <button class="app" data-app="price"><div class="icon"><span class="svgicon" data-icon="price"></span></div><div class="label">Pricing</div></button>
+              <button class="app" data-app="faq"><div class="icon"><span class="svgicon" data-icon="faq"></span></div><div class="label">FAQ</div></button>
+              <button class="app" data-app="contact"><div class="icon"><span class="svgicon" data-icon="contact"></span></div><div class="label">Contact</div></button>
+              <button class="app" data-app="access"><div class="icon"><span class="svgicon" data-icon="access"></span></div><div class="label">Access</div></button>
+
+              <button class="app" data-app="blog"><div class="icon"><span class="svgicon" data-icon="blog"></span></div><div class="label">Blog</div></button>
+              <button class="app" data-app="team"><div class="icon"><span class="svgicon" data-icon="team"></span></div><div class="label">Team</div></button>
+              <button class="app" data-app="recruit"><div class="icon"><span class="svgicon" data-icon="recruit"></span></div><div class="label">Recruit</div></button>
+              <button class="app" data-app="legal"><div class="icon"><span class="svgicon" data-icon="legal"></span></div><div class="label">Legal</div></button>
+            </div>
+          </div>
+
+          <!-- Page 2 -->
+          <div class="page">
+            <div class="grid">
+              <button class="app" data-app="feature"><div class="icon"><span class="svgicon" data-icon="feature"></span></div><div class="label">Feature</div></button>
+              <button class="app" data-app="campaign"><div class="icon"><span class="svgicon" data-icon="campaign"></span></div><div class="label">Campaign</div></button>
+              <button class="app" data-app="plan"><div class="icon"><span class="svgicon" data-icon="plan"></span></div><div class="label">Plan</div></button>
+              <button class="app" data-app="review"><div class="icon"><span class="svgicon" data-icon="review"></span></div><div class="label">Review</div></button>
+
+              <button class="app" data-app="tips"><div class="icon"><span class="svgicon" data-icon="tips"></span></div><div class="label">Tips</div></button>
+              <button class="app" data-app="guide"><div class="icon"><span class="svgicon" data-icon="guide"></span></div><div class="label">Guide</div></button>
+              <button class="app" data-app="docs"><div class="icon"><span class="svgicon" data-icon="docs"></span></div><div class="label">Docs</div></button>
+              <button class="app" data-app="support"><div class="icon"><span class="svgicon" data-icon="support"></span></div><div class="label">Support</div></button>
+
+              <button class="app" data-app="bonus"><div class="icon"><span class="svgicon" data-icon="bonus"></span></div><div class="label">Bonus</div></button>
+              <button class="app" data-app="stats"><div class="icon"><span class="svgicon" data-icon="stats"></span></div><div class="label">Stats</div></button>
+              <button class="app" data-app="lead"><div class="icon"><span class="svgicon" data-icon="lead"></span></div><div class="label">Lead</div></button>
+              <button class="app" data-app="settings"><div class="icon"><span class="svgicon" data-icon="settings"></span></div><div class="label">Settings</div></button>
+            </div>
+          </div>
+
+          <!-- ★ページ増やすなら、ここに <div class="page"> ... </div> を追加するだけ -->
+        </div>
+      </div>
+
+      <div class="bottom">
+        <div class="dots" id="dots" aria-label="ページインジケータ"></div>
+
+        <div class="dock" aria-label="ドック">
+          <button class="app" data-app="tel"><div class="icon"><span class="svgicon" data-icon="tel"></span></div><div class="label">Call</div></button>
+          <button class="app" data-app="chat"><div class="icon"><span class="svgicon" data-icon="chat"></span></div><div class="label">Chat</div></button>
+          <button class="app" data-app="map"><div class="icon"><span class="svgicon" data-icon="map"></span></div><div class="label">Map</div></button>
+          <button class="app" data-app="mail"><div class="icon"><span class="svgicon" data-icon="mail"></span></div><div class="label">Mail</div></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <section class="modal" id="modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <header class="modal__top">
+      <div class="modal__title">
+        <div class="modal__badge" id="modalBadge"></div>
+        <div style="min-width:0">
+          <h2 id="modalTitle">Title</h2>
+          <p id="modalSub">Sub</p>
+        </div>
+      </div>
+      <button class="btn" id="closeBtn" type="button">閉じる</button>
+    </header>
+    <div class="modal__body" id="modalBody"></div>
+  </section>
+
+  <script>
+    /* =========================
+       Wallpaper
+A
+    ========================= */
+    function setWallpaper(url){
+      document.documentElement.style.setProperty("--wallpaper", url ? `url("${url}")` : 'url("")');
+    }
+    setWallpaper("wallpaper.jpg");
+
+    /* =========================
+       SVG Icons (カラフル雑多)
+    ========================= */
+    function svgWrap(inner){ return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`; }
+
+    const ICON_SVGS = {
+      about: svgUser(),
+      service: svgStarBurst(),
+      works: svgPhoto(),
+      news: svgPaper(),
+      price: svgCard(),
+      faq: svgHelp(),
+      contact: svgMail(),
+      access: svgPin(),
+      blog: svgPen(),
+      team: svgUsers(),
+      recruit: svgBriefcase(),
+      legal: svgDoc(),
+
+      feature: svgSpark(),
+      campaign: svgFlame(),
+      plan: svgBox(),
+      review: svgBadge(),
+      tips: svgBrain(),
+      guide: svgCompass(),
+      docs: svgReceipt(),
+      support: svgWrench(),
+      bonus: svgGift(),
+      stats: svgChart(),
+      lead: svgMagnet(),
+      settings: svgGear(),
+
+      tel: svgPhone(),
+      chat: svgChat(),
+      map: svgMap(),
+      mail: svgInbox(),
+    };
+
+    function mountSvgs(){
+      document.querySelectorAll(".svgicon").forEach(el=>{
+        const key = el.dataset.icon;
+        el.innerHTML = ICON_SVGS[key] || ICON_SVGS["service"] || "";
+      });
+    }
+    mountSvgs();
+
+    /* =========================
+       Pagination Dots（SVGっぽ＋自動生成）
+    ========================= */
+    const pages = document.getElementById("pages");
+    const dotsWrap = document.getElementById("dots");
+
+    function dotSvg(a,b){
+      // idが被らないようにユニーク化
+      const gid = "g" + Math.random().toString(16).slice(2);
+      return `
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="${a}"/>
+              <stop offset="1" stop-color="${b}"/>
+            </linearGradient>
+          </defs>
+          <circle cx="12" cy="12" r="6.5" fill="url(#${gid})"/>
+          <circle cx="9" cy="10" r="1.3" fill="rgba(255,255,255,.85)"/>
+        </svg>
+      `;
+    }
+
+    const DOT_SVGS = [
+      () => dotSvg("#06D6A0","#8EECF5"),
+      () => dotSvg("#FFD166","#EF476F"),
+      () => dotSvg("#C77DFF","#FFAFCC"),
+      () => dotSvg("#118AB2","#FFD166"),
+      () => dotSvg("#EF476F","#06D6A0"),
+      () => dotSvg("#8EECF5","#C77DFF"),
+    ];
+
+    function buildDots(){
+      dotsWrap.innerHTML = "";
+      const pageCount = pages.querySelectorAll(".page").length;
+
+      for(let i=0;i<pageCount;i++){
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pdot" + (i===0 ? " is-active" : "");
+        b.setAttribute("aria-label", `ページ${i+1}へ`);
+        b.dataset.index = String(i);
+        b.innerHTML = DOT_SVGS[i % DOT_SVGS.length]();
+        b.addEventListener("click", () => {
+          pages.scrollTo({ left: i * pages.clientWidth, behavior: "smooth" });
+          setActiveDot(i);
+        });
+        dotsWrap.appendChild(b);
+      }
+    }
+
+    function setActiveDot(idx){
+      dotsWrap.querySelectorAll(".pdot").forEach((b,i)=>{
+        b.classList.toggle("is-active", i===idx);
+      });
+    }
+
+    function currentPageIndex(){
+      const w = pages.clientWidth || 1;
+      return Math.round(pages.scrollLeft / w);
+    }
+
+    buildDots();
+
+    pages.addEventListener("scroll", () => {
+      requestAnimationFrame(() => setActiveDot(currentPageIndex()));
+    });
+
+    // ページを増減した時に自動追従させたい場合に備えて（保険）
+    window.addEventListener("resize", () => {
+      const before = dotsWrap.querySelectorAll(".pdot").length;
+      const now = pages.querySelectorAll(".page").length;
+      if(before !== now) buildDots();
+      setActiveDot(currentPageIndex());
+    });
+
+    /* =========================
+       Modal
+    ========================= */
+    const overlay = document.getElementById("overlay");
+    const modal = document.getElementById("modal");
+    const closeBtn = document.getElementById("closeBtn");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalSub = document.getElementById("modalSub");
+    const modalBody = document.getElementById("modalBody");
+    const modalBadge = document.getElementById("modalBadge");
+
+    const CONTENT = {
+      about:{ title:"About", sub:"このサイトについて", body:`<div class="card"><h3>About</h3><p>ここに内容。</p></div>`},
+      service:{ title:"Service", sub:"提供内容", body:`<div class="card"><h3>Service</h3><p>ここに内容。</p></div>`},
+      works:{ title:"Works", sub:"制作実績", body:`<div class="card"><h3>Works</h3><p>ここに内容。</p></div>`},
+      news:{ title:"News", sub:"お知らせ", body:`<div class="card"><h3>News</h3><ul class="list"><li>更新1</li><li>更新2</li></ul></div>`},
+      price:{ title:"Pricing", sub:"料金", body:`<div class="card"><h3>Pricing</h3><p>ここに内容。</p></div>`},
+      faq:{ title:"FAQ", sub:"よくある質問", body:`<div class="card"><h3>FAQ</h3><p>ここに内容。</p></div>`},
+      contact:{ title:"Contact", sub:"お問い合わせ", body:`<div class="card"><h3>Contact</h3><p>ここに内容。</p></div>`},
+      access:{ title:"Access", sub:"アクセス", body:`<div class="card"><h3>Access</h3><p>ここに内容。</p></div>`},
+      blog:{ title:"Blog", sub:"読みもの", body:`<div class="card"><h3>Blog</h3><p>ここに内容。</p></div>`},
+      team:{ title:"Team", sub:"メンバー", body:`<div class="card"><h3>Team</h3><p>ここに内容。</p></div>`},
+      recruit:{ title:"Recruit", sub:"採用", body:`<div class="card"><h3>Recruit</h3><p>ここに内容。</p></div>`},
+      legal:{ title:"Legal", sub:"表記", body:`<div class="card"><h3>Legal</h3><p>ここに内容。</p></div>`},
+
+      feature:{ title:"Feature", sub:"特徴", body:`<div class="card"><h3>Feature</h3><p>ここに内容。</p></div>`},
+      campaign:{ title:"Campaign", sub:"キャンペーン", body:`<div class="card"><h3>Campaign</h3><p>ここに内容。</p></div>`},
+      plan:{ title:"Plan", sub:"プラン", body:`<div class="card"><h3>Plan</h3><p>ここに内容。</p></div>`},
+      review:{ title:"Review", sub:"レビュー", body:`<div class="card"><h3>Review</h3><p>ここに内容。</p></div>`},
+      tips:{ title:"Tips", sub:"豆知識", body:`<div class="card"><h3>Tips</h3><p>ここに内容。</p></div>`},
+      guide:{ title:"Guide", sub:"ガイド", body:`<div class="card"><h3>Guide</h3><p>ここに内容。</p></div>`},
+      docs:{ title:"Docs", sub:"資料", body:`<div class="card"><h3>Docs</h3><p>ここに内容。</p></div>`},
+      support:{ title:"Support", sub:"サポート", body:`<div class="card"><h3>Support</h3><p>ここに内容。</p></div>`},
+      bonus:{ title:"Bonus", sub:"特典", body:`<div class="card"><h3>Bonus</h3><p>ここに内容。</p></div>`},
+      stats:{ title:"Stats", sub:"実績", body:`<div class="card"><h3>Stats</h3><p>ここに内容。</p></div>`},
+      lead:{ title:"Lead", sub:"導線", body:`<div class="card"><h3>Lead</h3><p>ここに内容。</p></div>`},
+      settings:{ title:"Settings", sub:"設定", body:`<div class="card"><h3>Settings</h3><p>ここに内容。</p></div>`},
+
+      tel:{ title:"Call", sub:"電話", body:`<div class="card"><h3>tel:</h3><p><a href="tel:0000000000" style="color:rgba(255,255,255,.92)">000-0000-0000</a></p></div>`},
+      chat:{ title:"Chat", sub:"チャット", body:`<div class="card"><h3>Chat</h3><p>ここに内容。</p></div>`},
+      map:{ title:"Map", sub:"地図", body:`<div class="card"><h3>Map</h3><p>ここに内容。</p></div>`},
+      mail:{ title:"Mail", sub:"メール", body:`<div class="card"><h3>Mail</h3><p>ここに内容。</p></div>`},
+    };
+
+    let lastTrigger = null;
+    let isOpen = false;
+    let wasDragging = false;
+    let suppressNextClick = false;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function rect(el){ return el.getBoundingClientRect(); }
+
+    function setModalContent(key){
+      const d = CONTENT[key] || {title:"", sub:"", body:""};
+      modalTitle.textContent = d.title;
+      modalSub.textContent = d.sub;
+      modalBody.innerHTML = d.body;
+      modalBody.scrollTop = 0;
+      modalBadge.innerHTML = ICON_SVGS[key] || "";
+    }
+
+    function openFrom(btn){
+      if(isOpen) return;
+      isOpen = true;
+      lastTrigger = btn;
+
+      setModalContent(btn.dataset.app);
+
+      const icon = btn.querySelector(".icon");
+      const from = rect(icon);
+
+      const targetW = Math.min(390, window.innerWidth - 24);
+      const targetH = Math.min(720, window.innerHeight - 40);
+      const toLeft = (window.innerWidth - targetW) / 2;
+      const toTop  = (window.innerHeight - targetH) / 2;
+
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden","false");
+
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden","false");
+
+      modal.style.left = from.left + "px";
+      modal.style.top = from.top + "px";
+      modal.style.width = from.width + "px";
+      modal.style.height = from.height + "px";
+      modal.style.borderRadius = "18px";
+
+      closeBtn.focus({ preventScroll: true });
+
+      if(prefersReducedMotion){
+        overlay.style.background = "rgba(0,0,0,0.45)";
+        overlay.style.backdropFilter = "blur(8px)";
+        modal.style.left = toLeft + "px";
+        modal.style.top = toTop + "px";
+        modal.style.width = targetW + "px";
+        modal.style.height = targetH + "px";
+        modal.style.borderRadius = "24px";
+        return;
+      }
+
+      const dur = 420;
+      const easing = "cubic-bezier(.2,.9,.2,1)";
+
+      overlay.animate(
+        [
+          { background: "rgba(0,0,0,0.0)", backdropFilter: "blur(0px)" },
+          { background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)" }
+        ],
+        { duration: dur, easing, fill: "forwards" }
+      );
+
+      modal.animate(
+        [
+          { left: from.left+"px", top: from.top+"px", width: from.width+"px", height: from.height+"px", borderRadius:"18px" },
+          { left: toLeft+"px", top: toTop+"px", width: targetW+"px", height: targetH+"px", borderRadius:"24px" }
+        ],
+        { duration: dur, easing, fill: "forwards" }
+      ).onfinish = () => {
+        modal.style.left = toLeft + "px";
+        modal.style.top = toTop + "px";
+        modal.style.width = targetW + "px";
+        modal.style.height = targetH + "px";
+        modal.style.borderRadius = "24px";
+      };
+    }
+
+    function hardClose(){
+      overlay.classList.remove("is-open");
+      overlay.style.background = "rgba(0,0,0,0.0)";
+      overlay.style.backdropFilter = "blur(0px)";
+      modal.classList.remove("is-open");
+      modal.style.left = "0px";
+      modal.style.top = "0px";
+      modal.style.width = "10px";
+      modal.style.height = "10px";
+    }
+
+    function closeToTrigger(){
+      if(!isOpen) return;
+      isOpen = false;
+
+      const btn = lastTrigger;
+      const icon = btn?.querySelector(".icon");
+      if(!icon){ hardClose(); return; }
+
+      const from = rect(modal);
+      const to = rect(icon);
+
+      overlay.setAttribute("aria-hidden","true");
+      modal.setAttribute("aria-hidden","true");
+
+      if(prefersReducedMotion){
+        hardClose();
+        btn.focus({ preventScroll: true });
+        return;
+      }
+
+      const dur = 360;
+      const easing = "cubic-bezier(.2,.9,.2,1)";
+
+      overlay.animate(
+        [
+          { background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)" },
+          { background: "rgba(0,0,0,0.0)", backdropFilter: "blur(0px)" }
+        ],
+        { duration: dur, easing, fill: "forwards" }
+      );
+
+      modal.animate(
+        [
+          { left: from.left+"px", top: from.top+"px", width: from.width+"px", height: from.height+"px", borderRadius:"24px" },
+          { left: to.left+"px", top: to.top+"px", width: to.width+"px", height: to.height+"px", borderRadius:"18px" }
+        ],
+        { duration: dur, easing, fill: "forwards" }
+      ).onfinish = () => {
+        hardClose();
+        btn.focus({ preventScroll: true });
+      };
+    }
+
+    closeBtn.addEventListener("click", closeToTrigger);
+    overlay.addEventListener("click", closeToTrigger);
+    window.addEventListener("keydown", (e) => {
+      if(!isOpen) return;
+      if(e.key === "Escape"){ e.preventDefault(); closeToTrigger(); }
+    });
+
+    /* =========================
+       Click → Modal（drag誤爆防止）
+    ========================= */
+    document.querySelector(".shell").addEventListener("click", (e) => {
+      if(suppressNextClick){
+        suppressNextClick = false;
+        return;
+      }
+      if(wasDragging){
+        e.preventDefault();
+        e.stopPropagation();
+        wasDragging = false;
+        return;
+      }
+      const btn = e.target.closest(".app");
+      if(!btn) return;
+      openFrom(btn);
+    });
+
+    /* =========================
+       PC：アイコン上でもドラッグOK（閾値方式）
+       - 動いたらスライド
+       - 動かなければアイコンクリック（pointerup時にopen）
+    ========================= */
+    const isDesktopPointer = matchMedia("(hover:hover) and (pointer:fine)");
+    if(isDesktopPointer.matches){
+      const dragArea = document.querySelector(".home"); // ヘッダ/ドック以外
+      const DRAG_THRESHOLD = 8;
+
+      let isDown = false;
+      let startX = 0, startY = 0;
+      let startLeft = 0;
+      let moved = 0;
+      let pendingApp = null;
+
+      dragArea.addEventListener("pointerdown", (e) => {
+        isDown = true;
+        moved = 0;
+        wasDragging = false;
+
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = pages.scrollLeft;
+
+        pendingApp = e.target.closest(".app") || null;
+
+        pages.classList.add("is-dragging");
+        dragArea.setPointerCapture(e.pointerId);
+
+        e.preventDefault();
+      }, { passive:false });
+
+      dragArea.addEventListener("pointermove", (e) => {
+        if(!isDown) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        // 縦意図が強いときは横ドラッグを弱める（必要なら削除OK）
+        if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10){
+          return;
+        }
+
+        moved = Math.max(moved, Math.abs(dx));
+        pages.scrollLeft = startLeft - dx;
+
+        if(moved > DRAG_THRESHOLD){
+          wasDragging = true;
+        }
+      });
+
+      const end = (e) => {
+        if(!isDown) return;
+        isDown = false;
+
+        pages.classList.remove("is-dragging");
+        try{ dragArea.releasePointerCapture(e.pointerId); }catch(_){}
+
+        // 動かなかった & アイコン上 → ここでモーダルを開く
+        if(pendingApp && !wasDragging){
+          openFrom(pendingApp);
+          suppressNextClick = true;
+        }
+
+        pendingApp = null;
+
+        if(wasDragging){
+          setTimeout(() => (wasDragging = false), 0);
+        }
+      };
+
+      dragArea.addEventListener("pointerup", end);
+      dragArea.addEventListener("pointercancel", end);
+    }
+
+    /* =========================
+       SVGアイコン 定義
+    ========================= */
+    function svgUser(){ return svgWrap(`
+      <path d="M12 12.6c2.9 0 5-2.2 5-4.9C17 4.9 14.9 3 12 3S7 4.9 7 7.7c0 2.7 2.1 4.9 5 4.9Z" fill="#FFD166"/>
+      <path d="M4.3 21c1.1-4.1 4-6.2 7.7-6.2s6.6 2.1 7.7 6.2" stroke="#06D6A0" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="18.5" cy="6.2" r="2.2" fill="#EF476F" opacity=".9"/>
+    `); }
+    function svgStarBurst(){ return svgWrap(`
+      <path d="M12 2l2.4 4.8L20 9l-4 4 .9 5.6L12 16.9 7.1 18.6 8 13 4 9l5.6-2.2L12 2Z" fill="#EF476F"/>
+      <path d="M12 6.2l1.2 2.4 2.7 1.1-1.9 1.9.4 2.7-2.4-1.3-2.4 1.3.4-2.7-1.9-1.9 2.7-1.1L12 6.2Z" fill="#FFD166"/>
+      <path d="M3 12h3" stroke="#118AB2" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgPhoto(){ return svgWrap(`
+      <rect x="3" y="5" width="18" height="14" rx="3" fill="#118AB2"/>
+      <path d="M6.5 15.5l3.2-3.2 3.3 3.3 2.2-2.2 2.3 2.3" stroke="#FFD166" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="8.5" cy="9" r="1.6" fill="#EF476F"/>
+    `); }
+    function svgPaper(){ return svgWrap(`
+      <path d="M7 3h7l3 3v15H7V3Z" fill="#8EECF5"/>
+      <path d="M14 3v4h4" fill="#FFAFCC"/>
+      <path d="M9 10h8M9 13h8M9 16h6" stroke="#2B2D42" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="6" cy="7" r="2" fill="#C77DFF"/>
+    `); }
+    function svgCard(){ return svgWrap(`
+      <rect x="3" y="6" width="18" height="12" rx="3" fill="#06D6A0"/>
+      <rect x="3" y="9" width="18" height="2.4" fill="#073B4C" opacity=".55"/>
+      <rect x="6" y="13" width="6" height="2" rx="1" fill="#FFD166"/>
+      <circle cx="18" cy="15" r="2" fill="#EF476F"/>
+    `); }
+    function svgHelp(){ return svgWrap(`
+      <path d="M12 3c5 0 9 3.6 9 8.1 0 3.1-1.8 5.8-4.6 7.2l.6 2.7-3-1.7c-.6.1-1.2.2-1.9.2-5 0-9-3.6-9-8.1S7 3 12 3Z" fill="#FFD166"/>
+      <path d="M10.3 9.2c.2-1.4 1.3-2.4 2.9-2.4 1.8 0 3 1 3 2.6 0 1.1-.6 1.8-1.7 2.3-.9.4-1.2.7-1.2 1.7v.3" stroke="#073B4C" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12.9" cy="16.9" r="1.1" fill="#EF476F"/>
+    `); }
+    function svgMail(){ return svgWrap(`
+      <rect x="3.2" y="6" width="17.6" height="12" rx="3" fill="#FFAFCC"/>
+      <path d="M4.5 7.7l7.5 5.2 7.5-5.2" stroke="#2B2D42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M6.3 17l4.9-4" stroke="#C77DFF" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgPin(){ return svgWrap(`
+      <path d="M12 21s6-5.1 6-10.3C18 6.5 15.3 4 12 4S6 6.5 6 10.7C6 15.9 12 21 12 21Z" fill="#EF476F"/>
+      <circle cx="12" cy="10.6" r="2.3" fill="#FFD166"/>
+      <path d="M5 19h14" stroke="#06D6A0" stroke-width="2" stroke-linecap="round" opacity=".9"/>
+    `); }
+    function svgPen(){ return svgWrap(`
+      <path d="M5 19l3.3-.7L18 8.6 15.4 6 5.7 15.7 5 19Z" fill="#C77DFF"/>
+      <path d="M14.7 6.7l2.6 2.6" stroke="#2B2D42" stroke-width="2" stroke-linecap="round"/>
+      <path d="M4 20h16" stroke="#8EECF5" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgUsers(){ return svgWrap(`
+      <circle cx="9" cy="10" r="3" fill="#8EECF5"/>
+      <circle cx="16.5" cy="9" r="2.6" fill="#FFD166"/>
+      <path d="M3.8 20c.8-3.2 3.1-5 6.1-5s5.3 1.8 6.1 5" stroke="#2B2D42" stroke-width="2" stroke-linecap="round"/>
+      <path d="M14 20c.4-2.3 1.8-3.7 3.8-3.7 1.4 0 2.6.6 3.2 1.7" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgBriefcase(){ return svgWrap(`
+      <rect x="4" y="8" width="16" height="11" rx="3" fill="#118AB2"/>
+      <path d="M9 8V6.8C9 5.8 9.8 5 10.8 5h2.4C14.2 5 15 5.8 15 6.8V8" stroke="#FFD166" stroke-width="2" stroke-linecap="round"/>
+      <path d="M4 12h16" stroke="#073B4C" stroke-width="2" opacity=".55"/>
+      <circle cx="12" cy="13.5" r="1.2" fill="#EF476F"/>
+    `); }
+    function svgDoc(){ return svgWrap(`
+      <path d="M7 2h8l3 3v17H7V2Z" fill="#06D6A0"/>
+      <path d="M15 2v4h4" fill="#FFD166"/>
+      <path d="M9 9h7M9 12h7M9 15h5" stroke="#073B4C" stroke-width="2" stroke-linecap="round"/>
+      <path d="M6 6l1-1" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgSpark(){ return svgWrap(`
+      <path d="M12 2l1.2 5.2L18 9l-4.8 1.8L12 16l-1.2-5.2L6 9l4.8-1.8L12 2Z" fill="#FFD166"/>
+      <circle cx="19" cy="6" r="2" fill="#EF476F"/>
+      <circle cx="5" cy="17" r="2" fill="#8EECF5"/>
+    `); }
+    function svgFlame(){ return svgWrap(`
+      <path d="M12 2c2.3 3 1 5.3 3.2 7.2 1.8 1.5 3.8 3.2 3.8 6.1 0 4-3.3 6.7-7 6.7s-7-2.7-7-6.7c0-3.4 2.3-5.5 4.6-7.7C12.7 5.6 11.7 4 12 2Z" fill="#EF476F"/>
+      <path d="M12 10c1.6 2 .7 3.4 2.2 4.7 1 .9 1.8 1.9 1.8 3.3 0 2.2-1.9 3.7-4 3.7s-4-1.5-4-3.7c0-1.9 1.2-3.1 2.6-4.3.9-.8 1.6-1.6 1.4-3.7Z" fill="#FFD166" opacity=".9"/>
+    `); }
+    function svgBox(){ return svgWrap(`
+      <path d="M4 9l8-4 8 4-8 4-8-4Z" fill="#8EECF5"/>
+      <path d="M4 9v9l8 4v-9L4 9Z" fill="#06D6A0"/>
+      <path d="M20 9v9l-8 4v-9l8-4Z" fill="#118AB2"/>
+      <path d="M12 13v9" stroke="#2B2D42" stroke-width="2" opacity=".5"/>
+    `); }
+    function svgBadge(){ return svgWrap(`
+      <circle cx="12" cy="10" r="6" fill="#FFD166"/>
+      <path d="M9.5 16.5l.6 5 2-1.6 2 1.6.6-5" fill="#EF476F"/>
+      <path d="M10 10.2l1.4 1.4 2.8-3" stroke="#073B4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    `); }
+    function svgBrain(){ return svgWrap(`
+      <path d="M9.2 8.2c-.6-2 1-3.8 3.1-3.8 1.5 0 2.7.9 3.1 2.2 1.8.1 3.1 1.6 3.1 3.4 0 1.1-.5 2.1-1.3 2.8.4.5.6 1.2.6 2 0 2-1.6 3.6-3.6 3.6-.8 0-1.5-.2-2.1-.7-.6.5-1.3.7-2.1.7-2 0-3.6-1.6-3.6-3.6 0-.8.2-1.5.6-2-.9-.7-1.3-1.7-1.3-2.8 0-1.7 1.2-3.1 2.8-3.4Z" fill="#C77DFF"/>
+      <path d="M9.2 9.2c.7.3 1.2.9 1.2 1.7M14.8 9.2c-.7.3-1.2.9-1.2 1.7" stroke="#2B2D42" stroke-width="1.8" stroke-linecap="round"/>
+      <circle cx="19.2" cy="14.8" r="2" fill="#06D6A0"/>
+    `); }
+    function svgCompass(){ return svgWrap(`
+      <circle cx="12" cy="12" r="9" fill="#118AB2"/>
+      <circle cx="12" cy="12" r="6" fill="#8EECF5"/>
+      <path d="M10 14l4-4 1 5-5 1Z" fill="#EF476F"/>
+      <path d="M14 10l-4 4-1-5 5-1Z" fill="#FFD166"/>
+    `); }
+    function svgReceipt(){ return svgWrap(`
+      <path d="M7 3h10v18l-2-1-2 1-2-1-2 1-2-1-2 1V3Z" fill="#FFAFCC"/>
+      <path d="M9 8h6M9 11h6M9 14h4" stroke="#2B2D42" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="18.5" cy="7" r="2" fill="#06D6A0"/>
+    `); }
+    function svgWrench(){ return svgWrap(`
+      <path d="M14.5 5.3a4.3 4.3 0 0 0 5 5l-4.2 4.2-2.2-2.2L7.2 18.2a2.2 2.2 0 0 1-3.1-3.1l5.9-5.9-2.2-2.2 4.2-4.2Z" fill="#06D6A0"/>
+      <circle cx="6" cy="18" r="2" fill="#EF476F"/>
+    `); }
+    function svgGift(){ return svgWrap(`
+      <rect x="4" y="10" width="16" height="10" rx="2" fill="#FFD166"/>
+      <rect x="11" y="10" width="2" height="10" fill="#EF476F"/>
+      <rect x="4" y="10" width="16" height="3" fill="#118AB2" opacity=".75"/>
+      <path d="M12 10V7" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
+      <path d="M10.5 7.5c-1.2-1.2-3.1-1.1-3.8.1-.7 1.2.3 2.9 3.8 2.4" fill="#8EECF5"/>
+      <path d="M13.5 7.5c1.2-1.2 3.1-1.1 3.8.1.7 1.2-.3 2.9-3.8 2.4" fill="#06D6A0"/>
+    `); }
+    function svgChart(){ return svgWrap(`
+      <rect x="4" y="4" width="16" height="16" rx="3" fill="#073B4C" opacity=".85"/>
+      <path d="M7 16v-3M11 16V9M15 16v-5M19 16V7" stroke="#8EECF5" stroke-width="2" stroke-linecap="round"/>
+      <path d="M7 11l4-3 4 2 4-5" stroke="#FFD166" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    `); }
+    function svgMagnet(){ return svgWrap(`
+      <path d="M8 3h3v7a1 1 0 0 1-1 1H8V3Z" fill="#EF476F"/>
+      <path d="M13 3h3v7a1 1 0 0 1-1 1h-2V3Z" fill="#118AB2"/>
+      <path d="M8 11v3a4 4 0 0 0 8 0v-3" stroke="#FFD166" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="6.2" cy="14.2" r="2" fill="#06D6A0"/>
+    `); }
+    function svgGear(){ return svgWrap(`
+      <path d="M12 2l1 2.3 2.5.6-.9 2.4 1.8 1.8-2.4.9-.6 2.5L12 14l-1-2.3-2.5-.6.9-2.4L7.6 6.9l2.4-.9.6-2.5L12 2Z" fill="#C77DFF"/>
+      <circle cx="12" cy="8.2" r="2.3" fill="#8EECF5"/>
+      <path d="M5 18h14" stroke="#FFD166" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgPhone(){ return svgWrap(`
+      <path d="M7.5 4.5l2.4-.7 1.7 4.3-2 .9c.6 2 2.2 3.6 4.2 4.2l.9-2 4.3 1.7-.7 2.4c-.3 1-1.4 1.6-2.4 1.3-6.8-1.9-12-7.1-13.9-13.9-.3-1 .3-2.1 1.3-2.4Z" fill="#06D6A0"/>
+      <circle cx="18.5" cy="6.5" r="2" fill="#EF476F"/>
+    `); }
+    function svgChat(){ return svgWrap(`
+      <path d="M4 6.8C4 5.3 5.2 4 6.8 4h10.4C18.8 4 20 5.3 20 6.8v6.4c0 1.6-1.2 2.8-2.8 2.8H10l-3.5 3v-3H6.8C5.2 16 4 14.7 4 13.2V6.8Z" fill="#8EECF5"/>
+      <circle cx="9" cy="10" r="1.2" fill="#2B2D42"/>
+      <circle cx="12" cy="10" r="1.2" fill="#2B2D42"/>
+      <circle cx="15" cy="10" r="1.2" fill="#2B2D42"/>
+      <path d="M18 6l2-2" stroke="#EF476F" stroke-width="2" stroke-linecap="round"/>
+    `); }
+    function svgMap(){ return svgWrap(`
+      <path d="M4 6l6-2 4 2 6-2v14l-6 2-4-2-6 2V6Z" fill="#FFD166"/>
+      <path d="M10 4v14M14 6v14" stroke="#2B2D42" stroke-width="2" opacity=".55"/>
+      <path d="M16.5 10.5c0 2-2.5 4.7-2.5 4.7s-2.5-2.7-2.5-4.7c0-1.4 1.1-2.5 2.5-2.5s2.5 1.1 2.5 2.5Z" fill="#EF476F"/>
+      <circle cx="14" cy="10.5" r="1" fill="#8EECF5"/>
+    `); }
+    function svgInbox(){ return svgWrap(`
+      <path d="M5 5h14l2 7v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7l2-7Z" fill="#FFAFCC"/>
+      <path d="M3 12h6l1.5 2h3L15 12h6" stroke="#2B2D42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="6.5" cy="7.5" r="2" fill="#06D6A0"/>
+    `); }
+  </script>
+</body>
+</html>
