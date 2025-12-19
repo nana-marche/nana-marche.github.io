@@ -940,6 +940,107 @@ A
   dragArea.addEventListener("pointercancel", end);
 })();
 
+/* =====================================================
+   iOS Safari 完全フォールバック
+   - pointer が効かない端末用
+   - アイコン上でも必ずスワイプが通る
+   - 動かなければタップ（モーダル）
+===================================================== */
+(() => {
+  // pointerが使える & iOSでなければ何もしない
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (!isIOS) return;
+
+  const dragArea = document.querySelector(".home");
+  const DRAG_THRESHOLD = 10;   // px
+  const INTENT_THRESHOLD = 6;  // 横意図判定
+
+  let startX = 0, startY = 0;
+  let startLeft = 0;
+  let movedX = 0;
+  let decided = false;
+  let isHorizontal = false;
+  let isTouching = false;
+  let pendingApp = null;
+
+  const isExcludedTarget = (t) => {
+    if (t.closest(".statusbar")) return true;
+    if (t.closest(".dock")) return true;
+    if (t.closest(".pdot")) return true;
+    return false;
+  };
+
+  dragArea.addEventListener("touchstart", (e) => {
+    if (isOpen) return;
+    const t = e.target;
+    if (isExcludedTarget(t)) return;
+
+    const touch = e.touches[0];
+    isTouching = true;
+    decided = false;
+    isHorizontal = false;
+    movedX = 0;
+    wasDragging = false;
+
+    startX = touch.clientX;
+    startY = touch.clientY;
+    startLeft = pages.scrollLeft;
+
+    pendingApp = t.closest(".app") || null;
+  }, { passive: true });
+
+  dragArea.addEventListener("touchmove", (e) => {
+    if (!isTouching) return;
+    const touch = e.touches[0];
+
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+
+    // 意図判定
+    if (!decided) {
+      if (Math.abs(dx) > INTENT_THRESHOLD || Math.abs(dy) > INTENT_THRESHOLD) {
+        decided = true;
+        isHorizontal = Math.abs(dx) >= Math.abs(dy);
+      }
+    }
+
+    if (!isHorizontal) return;
+
+    // 横スワイプ確定 → ブラウザスクロール殺す
+    e.preventDefault();
+
+    movedX = Math.max(movedX, Math.abs(dx));
+    pages.scrollLeft = startLeft - dx;
+
+    if (movedX > DRAG_THRESHOLD) {
+      wasDragging = true;
+    }
+  }, { passive: false });
+
+  dragArea.addEventListener("touchend", () => {
+    if (!isTouching) return;
+    isTouching = false;
+
+    // 動かなかった & アイコン上 → モーダル
+    if (pendingApp && !wasDragging) {
+      openFrom(pendingApp);
+      suppressNextClick = true;
+    }
+
+    pendingApp = null;
+
+    if (wasDragging) {
+      setTimeout(() => (wasDragging = false), 0);
+    }
+  });
+
+  dragArea.addEventListener("touchcancel", () => {
+    isTouching = false;
+    pendingApp = null;
+  });
+})();
+
+
     /* =========================
        SVGアイコン 定義
     ========================= */
