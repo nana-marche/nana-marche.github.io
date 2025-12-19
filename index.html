@@ -382,22 +382,53 @@
     .list{ margin: 10px 0 0; padding-left: 18px; color: rgba(255,255,255,.82); line-height: 1.8; font-size: 13px; }
 
     /* ★スマホ：フル画面 */
-    @media (max-width: 540px){
-      body{
-        padding: 0;
-        background: #080a10;
-        align-items:stretch;
-      }
-      .shell{
-        width: 100%;
-        min-height: 100vh;
-        border-radius: 0;
-        border: none;
-        box-shadow: none;
-      }
-      .home{ min-height: calc(100vh - 48px); }
-      .pages{ cursor: auto; }
-    }
+/* ★スマホ：フル画面（縦横100%固定 / ページはスクロールさせない） */
+@media (max-width: 540px){
+  html, body{
+    height: 100%;
+    overflow: hidden;          /* ★ページ側の縦スクロール禁止 */
+  }
+
+  body{
+    padding: 0;
+    background: #080a10;
+    align-items: stretch;
+    overscroll-behavior: none; /* ★バウンス抑制（対応ブラウザ） */
+    position: fixed;           /* ★iOS含め「ページが動く」を止める */
+    inset: 0;
+    width: 100%;
+  }
+
+  .shell{
+    width: 100%;
+    height: calc(var(--vh, 1vh) * 100);  /* ★JSで実寸vhに補正 */
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .home{
+    height: calc(calc(var(--vh, 1vh) * 100) - 48px); /* statusbar分を引く */
+    min-height: 0;
+    overflow: hidden;   /* ★ホーム自体も縦スクロールさせない */
+  }
+
+  .pager{
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pages{
+    height: 100%;
+    overflow-y: hidden; /* ★横だけ */
+    cursor: auto;
+  }
+
+  .page{
+    height: 100%;
+  }
+}
 
     @media (prefers-reduced-motion: reduce){
       .pages{ scroll-behavior:auto; }
@@ -430,17 +461,17 @@
               <button class="app" data-app="faq"><div class="icon"><span class="svgicon" data-icon="faq"></span></div><div class="label">FAQ</div></button>
               <button class="app" data-app="contact"><div class="icon"><span class="svgicon" data-icon="contact"></span></div><div class="label">Contact</div></button>
               <button class="app" data-app="access"><div class="icon"><span class="svgicon" data-icon="access"></span></div><div class="label">Access</div></button>
-
-              <button class="app" data-app="blog"><div class="icon"><span class="svgicon" data-icon="blog"></span></div><div class="label">Blog</div></button>
-              <button class="app" data-app="team"><div class="icon"><span class="svgicon" data-icon="team"></span></div><div class="label">Team</div></button>
-              <button class="app" data-app="recruit"><div class="icon"><span class="svgicon" data-icon="recruit"></span></div><div class="label">Recruit</div></button>
-              <button class="app" data-app="legal"><div class="icon"><span class="svgicon" data-icon="legal"></span></div><div class="label">Legal</div></button>
             </div>
           </div>
 
           <!-- Page 2 -->
           <div class="page">
             <div class="grid">
+              <button class="app" data-app="blog"><div class="icon"><span class="svgicon" data-icon="blog"></span></div><div class="label">Blog</div></button>
+              <button class="app" data-app="team"><div class="icon"><span class="svgicon" data-icon="team"></span></div><div class="label">Team</div></button>
+              <button class="app" data-app="recruit"><div class="icon"><span class="svgicon" data-icon="recruit"></span></div><div class="label">Recruit</div></button>
+              <button class="app" data-app="legal"><div class="icon"><span class="svgicon" data-icon="legal"></span></div><div class="label">Legal</div></button>
+                
               <button class="app" data-app="feature"><div class="icon"><span class="svgicon" data-icon="feature"></span></div><div class="label">Feature</div></button>
               <button class="app" data-app="campaign"><div class="icon"><span class="svgicon" data-icon="campaign"></span></div><div class="label">Campaign</div></button>
               <button class="app" data-app="plan"><div class="icon"><span class="svgicon" data-icon="plan"></span></div><div class="label">Plan</div></button>
@@ -451,12 +482,19 @@
               <button class="app" data-app="docs"><div class="icon"><span class="svgicon" data-icon="docs"></span></div><div class="label">Docs</div></button>
               <button class="app" data-app="support"><div class="icon"><span class="svgicon" data-icon="support"></span></div><div class="label">Support</div></button>
 
+            </div>
+          </div>
+
+          <!-- Page 3 -->
+          <div class="page">
+            <div class="grid">
               <button class="app" data-app="bonus"><div class="icon"><span class="svgicon" data-icon="bonus"></span></div><div class="label">Bonus</div></button>
               <button class="app" data-app="stats"><div class="icon"><span class="svgicon" data-icon="stats"></span></div><div class="label">Stats</div></button>
               <button class="app" data-app="lead"><div class="icon"><span class="svgicon" data-icon="lead"></span></div><div class="label">Lead</div></button>
               <button class="app" data-app="settings"><div class="icon"><span class="svgicon" data-icon="settings"></span></div><div class="label">Settings</div></button>
             </div>
           </div>
+
 
           <!-- ★ページ増やすなら、ここに <div class="page"> ... </div> を追加するだけ -->
         </div>
@@ -500,6 +538,15 @@ A
       document.documentElement.style.setProperty("--wallpaper", url ? `url("${url}")` : 'url("")');
     }
     setWallpaper("wallpaper.jpg");
+
+      // ★iOS対策：アドレスバーの伸縮で100vhがズレるのを防ぐ
+  function setVhUnit(){
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty("--vh", `${vh}px`);
+  }
+  setVhUnit();
+  window.addEventListener("resize", setVhUnit, { passive: true });
+  window.addEventListener("orientationchange", setVhUnit, { passive: true });
 
     /* =========================
        SVG Icons (カラフル雑多)
