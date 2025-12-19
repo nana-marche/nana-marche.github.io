@@ -115,6 +115,7 @@
       min-height: 720px;
       display:flex;
       flex-direction:column;
+      touch-action: pan-y;
 
       /* PCドラッグ時のテキスト選択を抑制 */
       user-select: none;
@@ -816,81 +817,114 @@ A
       openFrom(btn);
     });
 
-    /* =========================
-       PC：アイコン上でもドラッグOK（閾値方式）
-       - 動いたらスライド
-       - 動かなければアイコンクリック（pointerup時にopen）
-    ========================= */
-    const isDesktopPointer = matchMedia("(hover:hover) and (pointer:fine)");
-    if(isDesktopPointer.matches){
-      const dragArea = document.querySelector(".home"); // ヘッダ/ドック以外
-      const DRAG_THRESHOLD = 8;
+/* =========================
+   全デバイス対応：どこ掴んでも横スライド（statusbar / dock は除外）
+   - アイコン上でもドラッグOK
+   - 動かなければアイコンはモーダル開く
+========================= */
+(() => {
+  const dragArea = document.querySelector(".home"); // メイン領域（statusbar除外の内側）
+  const DRAG_THRESHOLD = 8;  // これ以上動いたらドラッグ扱い
+  const INTENT_THRESHOLD = 6; // 横意図判定
 
-      let isDown = false;
-      let startX = 0, startY = 0;
-      let startLeft = 0;
-      let moved = 0;
-      let pendingApp = null;
+  let isDown = false;
+  let startX = 0, startY = 0;
+  let startLeft = 0;
+  let movedX = 0;
+  let decided = false;    // 横ドラッグにするかの意思決定済み
+  let isHorizontal = false;
+  let pendingApp = null;  // 動かなければ開く対象
+  let pointerId = null;
 
-      dragArea.addEventListener("pointerdown", (e) => {
-        isDown = true;
-        moved = 0;
-        wasDragging = false;
+  const isExcludedTarget = (t) => {
+    // statusbarとdockは掴んでもスライドさせない
+    if (t.closest(".statusbar")) return true;
+    if (t.closest(".dock")) return true;
 
-        startX = e.clientX;
-        startY = e.clientY;
-        startLeft = pages.scrollLeft;
+    // ドットはクリックしやすく（ただしドラッグしたいならこの行を消してOK）
+    if (t.closest(".pdot")) return true;
 
-        pendingApp = e.target.closest(".app") || null;
+    return false;
+  };
 
-        pages.classList.add("is-dragging");
-        dragArea.setPointerCapture(e.pointerId);
+  dragArea.addEventListener("pointerdown", (e) => {
+    if (isOpen) return;                 // モーダル中は無効
+    if (isExcludedTarget(e.target)) return;
 
-        e.preventDefault();
-      }, { passive:false });
+    isDown = true;
+    decided = false;
+    isHorizontal = false;
+    movedX = 0;
+    wasDragging = false;
 
-      dragArea.addEventListener("pointermove", (e) => {
-        if(!isDown) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = pages.scrollLeft;
 
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
+    // アイコン上なら「動かなければ開く」候補にする
+    pendingApp = e.target.closest(".app") || null;
 
-        // 縦意図が強いときは横ドラッグを弱める（必要なら削除OK）
-        if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10){
-          return;
-        }
+    pages.classList.add("is-dragging");
 
-        moved = Math.max(moved, Math.abs(dx));
-        pages.scrollLeft = startLeft - dx;
+    pointerId = e.pointerId;
+    dragArea.setPointerCapture(pointerId);
 
-        if(moved > DRAG_THRESHOLD){
-          wasDragging = true;
-        }
-      });
+    // iOSで preventDefault を効かせるために passive:false が必要（下で指定済み）
+  }, { passive: false });
 
-      const end = (e) => {
-        if(!isDown) return;
-        isDown = false;
+  dragArea.addEventListener("pointermove", (e) => {
+    if (!isDown) return;
+    if (pointerId !== null && e.pointerId !== pointerId) return;
 
-        pages.classList.remove("is-dragging");
-        try{ dragArea.releasePointerCapture(e.pointerId); }catch(_){}
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
 
-        // 動かなかった & アイコン上 → ここでモーダルを開く
-        if(pendingApp && !wasDragging){
-          openFrom(pendingApp);
-          suppressNextClick = true;
-        }
-
-        pendingApp = null;
-
-        if(wasDragging){
-          setTimeout(() => (wasDragging = false), 0);
-        }
-      };
-
-      dragArea.addEventListener("pointerup", end);
-      dragArea.addEventListener("pointercancel", end);
+    // どっち方向にしたいかを早めに決める（横意図が出たら横）
+    if (!decided) {
+      if (Math.abs(dx) > INTENT_THRESHOLD || Math.abs(dy) > INTENT_THRESHOLD) {
+        decided = true;
+        isHorizontal = Math.abs(dx) >= Math.abs(dy);
+      }
     }
+
+    if (!isHorizontal) return;
+
+    // 横ドラッグに入ったら、ブラウザのスクロール/選択を止める（スマホでも効く）
+    e.preventDefault();
+
+    movedX = Math.max(movedX, Math.abs(dx));
+    pages.scrollLeft = startLeft - dx;
+
+    if (movedX > DRAG_THRESHOLD) {
+      wasDragging = true;
+    }
+  }, { passive: false });
+
+  const end = (e) => {
+    if (!isDown) return;
+    if (pointerId !== null && e.pointerId !== pointerId) return;
+
+    isDown = false;
+    pages.classList.remove("is-dragging");
+
+    try { dragArea.releasePointerCapture(pointerId); } catch(_){}
+    pointerId = null;
+
+    // 動かなかった & アイコン上 → ここでモーダルを開く（クリックより優先）
+    if (pendingApp && !wasDragging) {
+      openFrom(pendingApp);
+      suppressNextClick = true; // clickハンドラで二重起動しないように
+    }
+    pendingApp = null;
+
+    if (wasDragging) {
+      setTimeout(() => (wasDragging = false), 0);
+    }
+  };
+
+  dragArea.addEventListener("pointerup", end);
+  dragArea.addEventListener("pointercancel", end);
+})();
 
     /* =========================
        SVGアイコン 定義
