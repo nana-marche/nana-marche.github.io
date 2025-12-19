@@ -121,6 +121,16 @@
       user-select: none;
     }
 
+    /* iOS対策：アイコン上でもスワイプ判定を通す */
+    .home,
+    .home *{
+        touch-action: pan-y;          /* 縦は許可、横はJSで制御 */
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+
     .pager{ margin-top: 6px; }
 
     .pages{
@@ -150,6 +160,10 @@
       grid-template-columns: repeat(4, 1fr);
       gap: var(--grid-gap);
       margin-top: 2px;
+    }
+
+    .app, .icon{
+        touch-action: pan-y;
     }
 
     .app{
